@@ -2,6 +2,7 @@ package com.ecsu.wpabst.mapstudy;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -9,27 +10,28 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.wallet.fragment.WalletFragmentStyle;
 
 import org.alternativevision.gpx.GPXParser;
 import org.alternativevision.gpx.beans.GPX;
+import org.alternativevision.gpx.beans.Track;
+import org.alternativevision.gpx.beans.Waypoint;
 import org.xml.sax.SAXException;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -47,7 +49,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private GoogleMap mMap;
     private FusedLocationProviderClient mFusedLocationProviderClient;
 
-
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
@@ -63,18 +64,20 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             mMap.setMyLocationEnabled(true);
 
             //display route here
-            GPXParser p = new GPXParser();
-            FileInputStream in = null;
+            //BEGIN CHANGES
+            ArrayList<LatLng> points = null;
+            PolylineOptions polyLineOptions = null;
+            polyLineOptions = new PolylineOptions();
+
+            FileInputStream input = null;
             try {
-                in = new FileInputStream("Norwich_Colchester_Loop.gpx");
+                input = new FileInputStream("Norwich_Colchester_Loop.gpx");
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
-
-                //parse the gpx here
             }
+            GPXParser parser = new GPXParser();
             try {
-                GPX gpx = p.parseGPX(in);
-                gpx.getTracks();
+                GPX gpx = parser.parseGPX(input);
             } catch (ParserConfigurationException e) {
                 e.printStackTrace();
             } catch (SAXException e) {
@@ -82,6 +85,23 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            Track trk = new Track();
+            ArrayList<Waypoint> trkpt = trk.getTrackPoints();
+
+            for(int i = 0; i < trkpt.size(); i++) {
+                double lat = trkpt.get(i).getLatitude();
+                double lng = trkpt.get(i).getLongitude();
+                LatLng position = new LatLng(lat, lng);
+
+                points.add(position);
+            }
+
+            polyLineOptions.addAll(points);
+            polyLineOptions.width(2);
+            polyLineOptions.color(Color.BLUE);
+
+            googleMap.addPolyline(polyLineOptions);
+            //END CHANGES
         }
     }
 
